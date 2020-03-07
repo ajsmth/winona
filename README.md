@@ -11,11 +11,11 @@ const [router, client] = create()
 
 // setup routes in the service
 router.get('/users/:id', ({ params, query }) => {
-  return fetch(`/my/api/or/external/service/${params.id}`)
+  return fetch(`/my/service/${params.id}`)
 })
 
 router.post('/me', ({ params, query, myCustomData }) => {
-  return myApi.post('/me', { body: myCustomData })
+  return myService.post('/me', { body: myCustomData })
 })
 
 
@@ -55,7 +55,7 @@ yarn add winona
 ## Drawbacks
 
 - slightly harder on the client, there's more work being done to match your paths
-- might not be your thing
+- this might be a horrible idea, or just might not be your thing
 
 ## Roadmap
 
