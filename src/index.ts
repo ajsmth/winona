@@ -1,160 +1,165 @@
 import { match, MatchFunction, MatchResult } from 'path-to-regexp';
 
-type IHandler = (args: MatchData) => Promise<any>;
+type IHandler = (args: IRequest) => Promise<any>;
 
-interface IClient {
+interface IApi {
   get: (path: string) => Promise<any>;
-  post: (path: string, options: any) => Promise<any>;
-  put: (path: string, options: any) => Promise<any>;
+  post: (path: string, options?: any) => Promise<any>;
+  put: (path: string, options?: any) => Promise<any>;
+  patch: (path: string, options?: any) => Promise<any>;
   delete: (path: string) => Promise<any>;
 }
 
 interface IRouter {
+  use: (path: string, handler: IRouter) => void;
   get: (path: string, handler: IHandler) => void;
   post: (path: string, handler: IHandler) => void;
   put: (path: string, handler: IHandler) => void;
+  patch: (path: string, handler: IHandler) => void;
   delete: (path: string, handler: IHandler) => void;
 }
 
-interface MatchData {
+interface IRequest {
   params: any;
   query: string;
   path: string;
 }
 
-function create(): [IRouter, IClient] {
-  const routers = {
-    get: createRouter(),
-    post: createRouter(),
-    put: createRouter(),
-    delete: createRouter(),
+type IVerbs = 'get' | 'post' | 'put' | 'delete' | 'patch';
+type IRouters = Record<IVerbs, IRoutes>;
+
+function create(): [IRouter, IApi] {
+  const routes: IRouters = {
+    get: createRoutes(),
+    post: createRoutes(),
+    put: createRoutes(),
+    patch: createRoutes(),
+    delete: createRoutes(),
   };
 
+  function use(path: string, handler: any) {
+    path = `${path}/(.*)`;
+
+    register('get')(path, handler);
+    register('post')(path, handler);
+    register('put')(path, handler);
+    register('patch')(path, handler);
+    register('delete')(path, handler);
+  }
+
+  function register(verb: IVerbs) {
+    const router = routes[verb];
+
+    return function(path: string, handler: any) {
+      router.paths.push(path);
+      router.handlers.push(handler);
+
+      const matcher = match(path);
+      router.matchers.push(matcher);
+    };
+  }
+
   function get(path: string) {
-    const [pathString, queryString = ''] = path.split('?');
+    const [handler, match] = findMatchingHandler(path, 'get');
 
-    const match = routers.get.findMatch(pathString);
-    const handler = routers.get.getHandlerForMatch(match);
-
-    if (match && handler) {
-      const { index, ...rest } = match;
-      const args = { ...rest, query: queryString };
-      return handler(args);
+    if (handler && match) {
+      return handler(match);
     }
-
-    throw new Error(`${path} is not a registered get() handler`);
   }
 
   function post(path: string, options: any) {
-    const [pathString, queryString = ''] = path.split('?');
+    const [handler, match] = findMatchingHandler(path, 'post');
 
-    const match = routers.post.findMatch(pathString);
-    const handler = routers.post.getHandlerForMatch(match);
-
-    if (match && handler) {
-      const { index, ...rest } = match;
-      const args = { ...rest, query: queryString, ...options };
-      return handler(args);
+    if (handler && match) {
+      return handler({ ...match, ...options });
     }
-
-    throw new Error(`${path} is not a registered post() handler`);
   }
 
   function put(path: string, options: any) {
-    const [pathString, queryString = ''] = path.split('?');
+    const [handler, match] = findMatchingHandler(path, 'put');
 
-    const match = routers.put.findMatch(pathString);
-    const handler = routers.put.getHandlerForMatch(match);
-
-    if (match && handler) {
-      const { index, ...rest } = match;
-      const args = { ...rest, query: queryString, ...options };
-      return handler(args);
+    if (handler && match) {
+      return handler({ ...match, ...options });
     }
+  }
 
-    throw new Error(`${path} is not a registered put() handler`);
+  function patch(path: string, options: any) {
+    const [handler, match] = findMatchingHandler(path, 'patch');
+
+    if (handler && match) {
+      return handler({ ...match, ...options });
+    }
   }
 
   function del(path: string) {
-    const [pathString, queryString = ''] = path.split('?');
+    const [handler, match] = findMatchingHandler(path, 'delete');
 
-    const match = routers.delete.findMatch(pathString);
-    const handler = routers.delete.getHandlerForMatch(match);
-
-    if (match && handler) {
-      const { index, ...rest } = match;
-      const args = { ...rest, query: queryString };
-      return handler(args);
+    if (handler && match) {
+      return handler(match);
     }
-
-    throw new Error(`${path} is not a registered get() handler`);
   }
 
-  const client = {
-    get,
-    post,
-    put,
-    delete: del,
-  };
+  function findMatchingHandler(path: string, verb: IVerbs) {
+    const _routes = routes[verb];
 
-  const router = {
-    get: routers.get.register,
-    post: routers.post.register,
-    put: routers.put.register,
-    delete: routers.delete.register,
-  };
-
-  return [router, client];
-}
-
-function createRouter() {
-  const handlers: IHandler[] = [];
-  const matchers: MatchFunction[] = [];
-  const paths: string[] = [];
-
-  function register(path: string, handler: IHandler) {
-    handlers.push(handler);
-    paths.push(path);
-
-    const matcher = match(path, {
-      encode: encodeURI,
-      decode: decodeURIComponent,
-    });
-
-    matchers.push(matcher);
-  }
-
-  function getHandlerForMatch(match?: MatchResult) {
-    if (match) {
-      const handler = handlers[match.index];
-
-      if (handler) {
-        return handler;
-      }
-    }
-
-    return undefined;
-  }
-
-  function findMatch(path: string) {
-    for (let index = 0; index < matchers.length; index++) {
-      const matcher = matchers[index];
+    for (let index = 0; index < _routes.matchers.length; index++) {
+      const matcher = _routes.matchers[index];
       const match = matcher(path);
 
       if (match) {
-        match.index = index;
-        match.params = match.params || {};
-        return match;
+        let handler = _routes.handlers[index];
+
+        if (typeof handler === 'object') {
+          let basepath = _routes.paths[index].replace('/(.*)', '');
+          path = path.replace(basepath, '');
+
+          // @ts-ignore
+          return handler.findMatchingHandler(path, verb);
+        }
+
+        return [handler, match];
       }
     }
 
-    return undefined;
+    return [];
   }
 
+  const api = {
+    get: get,
+    post: post,
+    patch: patch,
+    put: put,
+    delete: del,
+  };
+
+  const app = {
+    get: register('get'),
+    post: register('post'),
+    put: register('put'),
+    patch: register('patch'),
+    delete: register('delete'),
+    use: use,
+    findMatchingHandler,
+  };
+
+  return [app, api];
+}
+
+interface IRoutes {
+  paths: string[];
+  handlers: IHandler[];
+  matchers: MatchFunction[];
+}
+
+function createRoutes(): IRoutes {
+  const paths: string[] = [];
+  const handlers: IHandler[] = [];
+  const matchers: MatchFunction[] = [];
+
   return {
-    register,
-    getHandlerForMatch,
-    findMatch,
+    paths,
+    handlers,
+    matchers,
   };
 }
 
