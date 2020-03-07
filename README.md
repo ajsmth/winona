@@ -5,6 +5,7 @@
 If you're not sure what that means (I'm not), hopefully this example is a bit clearer:
 
 ```javascript
+// in a service file of a react app, for example
 import create from 'winona'
 
 const [app, api] = create()
@@ -17,6 +18,8 @@ app.get('/users/:id', (req) => {
 app.post('/me', (req) => {
   return myService.post('/me', { body: req.myCustomData })
 })
+
+
 
 // use throughout your app
 function UserProfile({ userId }) {
