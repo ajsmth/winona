@@ -3,6 +3,13 @@
   "version": "0.1.1",
   "main": "dist/index.js",
   "module": "dist/winona.esm.js",
+  "description": "A bridge between your client code and your api services",
+  "license": "MIT",
+  "author": {
+    "name": "andy",
+    "email": "andydevs123@gmail.com",
+    "url": "https://ajsmth.com"
+  },
   "typings": "dist/index.d.ts",
   "files": [
     "dist"
