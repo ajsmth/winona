@@ -1,27 +1,63 @@
-# TSDX Bootstrap
+# winona
 
-This project was bootstrapped with [TSDX](https://github.com/jaredpalmer/tsdx).
+`winona` is a bridge between your client code and your api services.
 
-## Local Development
+If you're not sure what that means (I'm not), hopefully this example is a bit clearer:
 
-Below is a list of commands you will probably find useful.
+```javascript
+import create from 'winona'
 
-### `npm start` or `yarn start`
+const [router, client] = create()
 
-Runs the project in development/watch mode. Your project will be rebuilt upon changes. TSDX has a special logger for you convenience. Error messages are pretty printed and formatted for compatibility VS Code's Problems tab.
+// setup routes in the service
+router.get('/users/:id', ({ params, query }) => {
+  return fetch(`/my/api/or/external/service/${params.id}`)
+})
 
-<img src="https://user-images.githubusercontent.com/4060187/52168303-574d3a00-26f6-11e9-9f3b-71dbec9ebfcb.gif" width="600" />
+router.post('/me', ({ params, query, myCustomData }) => {
+  return myApi.post('/me', { body: myCustomData })
+})
 
-Your library will be rebuilt if you make edits.
 
-### `npm run build` or `yarn build`
+// use throughout your client
+function UserProfile({ userId }) {
 
-Bundles the package to the `dist` folder.
-The package is optimized and bundled with Rollup into multiple formats (CommonJS, UMD, and ES Module).
+  React.useEffect(() => {
+    client.get(`/users/${userId}`).then(...)
+  }, [userId])
 
-<img src="https://user-images.githubusercontent.com/4060187/52168322-a98e5b00-26f6-11e9-8cf6-222d716b75ef.gif" width="600" />
+  function onSubmit() {
+    client.post(`/me`, { myCustomData: { 'hi' }}).then(...)
+  }
+}
+```
 
-### `npm test` or `yarn test`
+## Motivation
 
-Runs the test watcher (Jest) in an interactive mode.
-By default, runs tests related to files changed since the last commit.
+Providing an api service layer to an app is a pain - you can end up with a lot of bespoke function calls that feel duplicate-y and verbose, or your calls are sprinkled throughout your app willy nilly and you live to dread the day you have to update one (or all) of them.
+
+It would be nice to have a layer that bridges our service level calls with how our app code uses them. That way if our services change, we only need to look in one place to make our adjustments.
+
+Express has a straighforward api that seems like a good fit for our client code (maybe I'm wrong), so I copied some of it.
+
+## Installation
+
+```bash
+yarn add winona
+```
+
+## Benefits
+
+- keeps all your integrations in one place in case you need to swap them out or mock them in tests
+- gives you (the front-ender) the freedom to define your api calls to whatever makes sense to you
+- will likely work quite nicely with something like miragejs (not right now though)
+
+## Drawbacks
+
+- slightly harder on the client, there's more work being done to match your paths
+- might not be your thing
+
+## Roadmap
+
+- nested routers like `api.use('/auth', authRouter)`
+- support for middleware and error handling
