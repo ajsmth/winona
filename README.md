@@ -18,7 +18,6 @@ router.post('/me', ({ params, query, myCustomData }) => {
   return myService.post('/me', { body: myCustomData })
 })
 
-
 // use throughout your client
 function UserProfile({ userId }) {
 
@@ -34,17 +33,27 @@ function UserProfile({ userId }) {
 
 ## Motivation
 
-Providing an api service layer to an app is a pain - you can end up with a lot of bespoke function calls that feel duplicate-y and verbose, or your calls are sprinkled throughout your app willy nilly and you live to dread the day you have to update one (or all) of them.
+Implementing an api service layer for an app is a pain:
 
-It would be nice to have a layer that bridges our service level calls with how our app code uses them. That way if our services change, we only need to look in one place to make our adjustments.
+- you can end up with a lot of bespoke function calls that feel duplicate-y
+- or you sprinkle calls everywhere and live in dread for when your backend changes
+- most importantly - it's easy to write the wrong abstraction in your app!
 
-Express has a straighforward api that seems like a good fit for our client code (maybe I'm wrong), so I copied some of it.
+It would be nice to have a layer that bridges our service level calls with how our app code uses them. That way if our services change, we only need to look in one place to make our adjustments, and keep our app code nice and clean.
 
 ## Installation
 
 ```bash
 yarn add winona
 ```
+
+## A little bit more
+
+Hopefully the routing situation is somewhat familiar - paths work similar to how they would in an express app. The first matching route executes its handler, so the order in which you register routes is important.
+
+This is handy for one-off cases where a service doesn't quite match up with how your app should work.
+
+For example, if one api call is slightly different in structure from your other related calls, but it would be oh so nice to use as a single component or hook. You can leverage the routing order to capture such cases.
 
 ## Benefits
 
