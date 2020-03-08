@@ -51,7 +51,35 @@ yarn add winona
 
 Hopefully the routing situation is somewhat familiar - paths work similar to how they would in an express app. The first matching route executes its handler, so the order in which you register routes is important.
 
-This is handy for one-off cases where a service doesn't quite match up with how your app should work. For example, if one api call differs slightly in structure from your other related calls, but would be oh so nice to use as a single component or hook - you can leverage the order of registered routes in such cases
+This is handy for one-off cases where a service doesn't quite match up with how your app should work. For example, if one service endpoint differs slightly in structure from your other related calls - you can leverage the order of registered routes in such cases to capture this case and keep your client code clean:
+
+```javascript
+// example - playlist component
+
+// say the playlist with the name "featured" needs to hit a different endpoint than the rest of our playlists
+
+function Playlist({ name }) {
+  React.useEffect(() => {
+    api.get(`/playlists/${name}`).then(...)
+  }, [name])
+  ...
+}
+
+// we could write a new component for this one off case, or we could capture this change in our service instead:
+
+const [app, api] = create()
+
+// capture the featured route and map it to a different endpoint:
+app.get('/playlists/featured', (req) => {
+  return service.get('/not/the/same/endpoint/as/others')
+})
+
+// the rest of the playlists will fall through to this route
+app.get('/playlists/:id', (req) => {
+  return service.get(`/playlists/${req.params.id}`)
+})
+
+```
 
 It's also possible to nest routers and group your calls by their roles:
 
