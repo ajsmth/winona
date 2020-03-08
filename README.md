@@ -20,7 +20,6 @@ app.post('/me', (req) => {
 })
 
 
-
 // use throughout your app
 function UserProfile({ userId }) {
 
@@ -36,13 +35,11 @@ function UserProfile({ userId }) {
 
 ## Motivation
 
-Implementing an api service layer for an app is a pain:
+It's really easy to write the wrong abstraction when working with backend services. Even if you've written both the backend and frontend yourself, discrepancies are certain to arise between the two that you'll have to account for, somewhere. This becomes even more apparent when working with a backend that you don't own.
 
-- you end up with a lot of functions that feel duplicate-y and bespoke
-- or you sprinkle api calls ad-hoc and live in dread for when your backend changes
-- most importantly - it's easy to write the wrong abstraction in your app!
+It would be nice to have a layer that defines how the app interfaces with these services. That way if our services change, we only need to look in one place to make our adjustments, and keep our app code nice and clean. And if updates in our app don't quite match up with the backend, or there is a one-off case that breaks a component you've implemented, you can make these changes in one place instead of introducing complexities all throughout your codebase.
 
-It would be nice to have a layer that bridges our service level calls with how our app code uses them. That way if our services change, we only need to look in one place to make our adjustments, and keep our app code nice and clean.
+Lastly, as a client of a backend service, the calls that you make in your app should feel familiar and represent what is actually happening - you're making a network request to an endpoint, so I wanted the api to communicate this.
 
 ## Installation
 
@@ -75,13 +72,13 @@ api.get(`/auth/user/123`)
 ## Benefits
 
 - keeps all your integrations in one place in case you need to swap them out or mock them in tests
-- gives you (the front-ender) the freedom to define your api calls to whatever makes sense to you
-- will likely work quite nicely with something like miragejs (not right now though)
-  pinde
+- gives you (the front-ender) the freedom to define your api calls to whatever makes sense for the app you are building
+- works great with a library like miragejs - simply add your fetch calls wherever you define your service, and swap it out for the real thing when your backend is ready
 
 ## Drawbacks
 
 - slightly harder on the client, there's more work being done to match your paths
+- you don't get the typescript definitions that an explicit api function would give you - although the accuracy of those types is debatable anyways
 - this might be a horrible idea, or just might not be your thing
 
 ## Roadmap
