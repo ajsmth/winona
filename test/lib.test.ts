@@ -33,6 +33,21 @@ test('passes params to calls', () => {
   );
 });
 
+test('query strings passed through', () => {
+  const [app, api] = createApi();
+
+  const myService = jest.fn();
+
+  const queryString = `test=value`;
+
+  app.get('/user/:id', myService);
+  api.get('/user/123?' + queryString);
+
+  expect(myService).toHaveBeenLastCalledWith(
+    expect.objectContaining({ query: queryString })
+  );
+});
+
 test('passes data to post, put calls', () => {
   const [app, api] = createApi();
 

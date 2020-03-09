@@ -102,19 +102,24 @@ function create(): [IRouter, IApi] {
   function findMatchingHandler(path: string, verb: IVerbs) {
     const _routes = routes[verb];
 
+    let [pathname, query] = path.split('?');
+
     for (let index = 0; index < _routes.matchers.length; index++) {
       const matcher = _routes.matchers[index];
-      const match = matcher(path);
+      const match = matcher(pathname);
 
       if (match) {
         let handler = _routes.handlers[index];
 
+        // @ts-ignore
+        match.query = query;
+
         if (typeof handler === 'object') {
           let basepath = _routes.paths[index].replace('/(.*)', '');
-          path = path.replace(basepath, '');
+          pathname = pathname.replace(basepath, '');
 
           // @ts-ignore
-          return handler.findMatchingHandler(path, verb);
+          return handler.findMatchingHandler(pathname, verb);
         }
 
         return [handler, match];
